@@ -1,7 +1,9 @@
 import base64
 
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from typing import Optional
 
 from bookstore import models
 
@@ -39,6 +41,15 @@ class NestedHashedPrimaryKeyRelatedField(HashedPrimaryKeyRelatedField):
         self.serializer = serializer
         super().__init__(**kwargs)
 
+    def _format(self) -> Optional[str]:
+        format = self.context.get('format', None)
+
+        if format is None and settings.URL_FORMAT_OVERRIDE is not None:
+            request = self.context['request']
+            format = request.query_params.get(settings.URL_FORMAT_OVERRIDE)
+
+        return format
+
     def _is_json(self):
         request = self.context['request']
         content_type = request.headers.get('content-type', None)
@@ -46,9 +57,7 @@ class NestedHashedPrimaryKeyRelatedField(HashedPrimaryKeyRelatedField):
         return 'application/json' in content_type
 
     def _accepts_json(self):
-        format = self.context.get('format', None)
-
-        return 'json' == format
+        return 'json' == self._format()
 
     def run_validation(self, data=None):
         if self._is_json() and data is not None:
