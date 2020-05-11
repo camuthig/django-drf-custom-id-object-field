@@ -42,13 +42,9 @@ class NestedHashedPrimaryKeyRelatedField(HashedPrimaryKeyRelatedField):
         super().__init__(**kwargs)
 
     def _format(self) -> Optional[str]:
-        format = self.context.get('format', None)
+        request = self.context.get('request')
 
-        if format is None and settings.URL_FORMAT_OVERRIDE is not None:
-            request = self.context['request']
-            format = request.query_params.get(settings.URL_FORMAT_OVERRIDE)
-
-        return format
+        return request.accepted_renderer.format
 
     def _is_json(self):
         request = self.context['request']
